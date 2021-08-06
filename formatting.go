@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-var useColors = true
+var useColors = false
 
 func color(text string, code int, bold bool) string {
 	if useColors {

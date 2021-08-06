@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 func main() {
@@ -20,6 +23,8 @@ func main() {
 	fmt.Println("")
 	fmt.Println(blue("GOLANG Sniper made by ", true) + green("_Spqghett1#6969", true))
 	fmt.Println("")
+
+	//info(strconv.Itoa(int(getPing())))
 	// Configuration
 	fmt.Println(yellow("What mode of authentication do you want to use?", true))
 	fmt.Println(yellow("Mojang login (m), Microsoft login (ms) or a token (t)", true))
@@ -53,6 +58,21 @@ func main() {
 
 	if validateToken(authConfig.TOKEN) {
 		success("Token validated!")
+		var config SnipeConfig
+		config.USERNAME = input("Name you want to snipe: ")
+		config.TOKEN = authConfig.TOKEN
+		changeSkin(config.TOKEN)
+		config.DROPTIME = getDropTime(config.USERNAME)
+		if config.DROPTIME <= 0 {
+			error("Unable to get droptime. Try start the sniper sooner before the name becomes available.")
+			os.Exit(-1)
+		}
+		config.OFFSET, _ = strconv.Atoi(input("Offset you want to use (PING will be added): "))
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go snipe(config, &wg)
+		wg.Wait()
+		fmt.Println(time.Now())
 	} else {
 		error("Token invalid!")
 		os.Exit(-1)

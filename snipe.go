@@ -10,7 +10,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
 func getToken(email string, password string) string {
@@ -107,9 +110,6 @@ func getTokenMS(email string, password string) string {
 		os.Exit(-1)
 	}
 	sb = string(body)
-	//fmt.Println(email)
-	//fmt.Println(password)
-	ioutil.WriteFile("random2.html", []byte(sb), 0644)
 	if strings.Contains(sb, "Sign in to") {
 		error("Invalid credentials! Make sure to enter your correct email and password!")
 		enterManually := input("Would you like to complete the setup manually? (Y/N) ")
@@ -215,4 +215,63 @@ func changeSkin(token string) {
 	if err != nil {
 		error("Error changing skin!")
 	}
+}
+
+func getDropTime(username string) int {
+	url := "http://api.coolkidmacho.com/droptime/" + username
+	res, err := http.Get(url)
+	if err != nil {
+		return -1
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return -1
+	}
+	var data DropTime
+	json.Unmarshal([]byte(string(body)), &data)
+	if data.UNIX == 0 { // If the API returns 0 as the droptime, fail
+		return -1
+	}
+	return data.UNIX
+}
+
+func snipe(config SnipeConfig, group *sync.WaitGroup) {
+	info(fmt.Sprintf("Sniping %s at %s / in %s ms!", magenta(config.USERNAME, true), magenta(strconv.Itoa(config.DROPTIME), true), magenta(strconv.Itoa((config.DROPTIME-int(time.Now().Unix()))*1000), true)))
+	ping := getPing()
+	info("Ping: " + strconv.Itoa(int(ping)))
+	timeAt := int64((float64(config.DROPTIME) - (float64(config.OFFSET) / 1000) - (ping / 1000)) * 1e9)
+	url_ := "https://api.minecraftservices.com/minecraft/profile/name/" + config.USERNAME
+	req, _ := http.NewRequest("PUT", url_, nil)
+	req.Header.Set("Authorization", "Bearer "+config.TOKEN)
+	for i := 0; i < 3; i++ {
+		group.Add(1)
+		tmpOffset := int64(i * 90 * 1e6)
+		go sendRequest(config.TOKEN, timeAt+tmpOffset, req, group)
+	}
+	defer group.Done()
+}
+
+func sendRequest(token string, timeAt int64, r *http.Request, group *sync.WaitGroup) {
+	for time.Now().UnixNano() < timeAt {
+		time.Sleep(time.Microsecond)
+	}
+	timeInfo("Attempting to snipe now!")
+	res, _ := http.DefaultClient.Do(r)
+	if res.StatusCode == 200 {
+		success("Name sniped!")
+		fmt.Println(time.Now())
+		changeSkin(token)
+	}
+	log(fmt.Sprint(time.Now()) + " ==== " + fmt.Sprint(res))
+	defer group.Done()
+}
+
+func getPing() float64 {
+	start := time.Now().UnixNano()
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", "https://api.minecraftservices.com/minecraft/profile/name/abcdef", nil)
+	_, _ = client.Do(req)
+	end := time.Now().UnixNano()
+	return float64(end-start) / 1e6
 }

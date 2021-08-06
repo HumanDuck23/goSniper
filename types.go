@@ -1,18 +1,22 @@
 package main
 
+import "sync"
+
 type SnipeConfig struct {
 	USERNAME string
-	TOKEN string
-	DROPTIME string
-	OFFSET int
+	TOKEN    string
+	DROPTIME int
+	OFFSET   int
 }
 
 type AuthConfig struct {
-	EMAIL string
+	EMAIL    string
 	PASSWORD string
-	TOKEN string
+	TOKEN    string
 }
 
 type DropTime struct {
-	UNIX int
+	UNIX int `json:"unix"`
 }
+
+type snipeFunc func(string, string, *sync.WaitGroup)
