@@ -217,6 +217,27 @@ func changeSkin(token string) {
 	}
 }
 
+func starDropTime(username string) int {
+	url := "https://api.star.shopping/droptime/" + username
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("User-Agent", "Sniper")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return -1
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return -1
+	}
+	var data StarDropTime
+	json.Unmarshal([]byte(string(body)), &data)
+	if data.UNIX == 0 { // If the API returns 0 as the droptime, fail
+		return -1
+	}
+	return data.UNIX
+}
+
 func getDropTime(username string) int {
 	url := "http://api.coolkidmacho.com/droptime/" + username
 	res, err := http.Get(url)
@@ -244,9 +265,9 @@ func snipe(config SnipeConfig, group *sync.WaitGroup) {
 	url_ := "https://api.minecraftservices.com/minecraft/profile/name/" + config.USERNAME
 	req, _ := http.NewRequest("PUT", url_, nil)
 	req.Header.Set("Authorization", "Bearer "+config.TOKEN)
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		group.Add(1)
-		tmpOffset := int64(i * 90 * 1e6)
+		tmpOffset := int64(i * 80 * 1e6)
 		go sendRequest(config.TOKEN, timeAt+tmpOffset, req, group)
 	}
 	defer group.Done()

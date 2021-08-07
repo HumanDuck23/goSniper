@@ -15,8 +15,12 @@ type AuthConfig struct {
 	TOKEN    string
 }
 
-type DropTime struct {
+type StarDropTime struct {
 	UNIX int `json:"unix"`
+}
+
+type DropTime struct {
+	UNIX int
 }
 
 type snipeFunc func(string, string, *sync.WaitGroup)

@@ -62,9 +62,9 @@ func main() {
 		config.USERNAME = input("Name you want to snipe: ")
 		config.TOKEN = authConfig.TOKEN
 		changeSkin(config.TOKEN)
-		config.DROPTIME = getDropTime(config.USERNAME)
+		config.DROPTIME = starDropTime(config.USERNAME)
 		if config.DROPTIME <= 0 {
-			error("Unable to get droptime. Try start the sniper sooner before the name becomes available.")
+			error("Unable to get droptime. Make sure to start the sniper soon before the name becomes available.")
 			os.Exit(-1)
 		}
 		config.OFFSET, _ = strconv.Atoi(input("Offset you want to use (PING will be added): "))
